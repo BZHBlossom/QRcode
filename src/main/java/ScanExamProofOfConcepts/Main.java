@@ -8,6 +8,7 @@ import java.util.Scanner;
 import javax.imageio.ImageIO;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.tools.imageio.ImageIOUtil;
@@ -16,13 +17,14 @@ import com.google.zxing.WriterException;
 
 public class Main extends Thread {
 	private static final String QR_CODE = "./MyQRCode.png";
-	private static final String PDFCIBLE = "./pfo_example.pdf";
+	private static final String PDFCIBLE = "./handouts-cm1.pdf";
+	//private static final String PDFCIBLE = "./pfo_example.pdf";
 
 	public static void lecture(PDFRenderer pdfRenderer, int debpages, int nbPagesTotal) throws IOException {
 		long startThread = System.currentTimeMillis();
 
 		for (int page = debpages; page < nbPagesTotal; ++page) {
-			BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 80, ImageType.GRAY);
+			BufferedImage bim = pdfRenderer.renderImageWithDPI(page,300, ImageType.RGB);
 			BufferedImage dest = bim.getSubimage(540, 50, 120, 110);
 			System.out.println(QRCodeReader.decodeQRCodeBuffered(dest));
 		}
@@ -30,6 +32,7 @@ public class Main extends Thread {
 		System.out.println("temps décodage du thread : " + (System.currentTimeMillis() - startThread) + " ms");
 	}
 
+	
 	public void run() {
 		System.out.println("début du thread : " + Thread.currentThread().getName());
 
@@ -43,7 +46,6 @@ public class Main extends Thread {
 		String stringAEncoder = sc.next();
 
 		try {
-
 			QRCodeGenerator.generateQRCodeImage(stringAEncoder, 350, 350, QR_CODE);
 
 		} catch (WriterException e) {
@@ -54,11 +56,11 @@ public class Main extends Thread {
 
 		System.out.println("Le QR Code a été généré en " + (System.currentTimeMillis() - startTime) + " ms");
 
-		AddImageToPDF.createPDFFromImageInAllPages(PDFCIBLE, QR_CODE, "./pfo_example_inserted.pdf");
+		InsertingImage.createPdfFromImageInAllPages(PDFCIBLE, QR_CODE, "./pfo_example_inserted.pdf");
 
 		System.out.println("Le QR OCde a été inséré en " + (System.currentTimeMillis() - startTime) + " ms");
 		startTime = System.currentTimeMillis();
-		
+
 		File pdf = new File("./pfo_example_inserted.pdf");
 
 		PDDocument document = PDDocument.load(pdf);

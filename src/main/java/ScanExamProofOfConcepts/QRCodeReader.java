@@ -12,6 +12,8 @@ import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 
 import java.awt.image.*;
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class QRCodeReader {
 
@@ -43,8 +45,11 @@ public class QRCodeReader {
 		LuminanceSource source = new BufferedImageLuminanceSource(bufferedImage);
 		BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
 
+		Map<DecodeHintType,String> map = new HashMap<>();
+		map.put(DecodeHintType.CHARACTER_SET,"ALLOWED_EAN_EXTENSIONS");
+
 		try {
-			Result result = new MultiFormatReader().decode(bitmap);
+			Result result = new MultiFormatReader().decodeWithState(bitmap);
 			return result.getText();
 		} catch (NotFoundException e) {
 			System.out.println("There is no QR code in the image");
@@ -84,7 +89,7 @@ public class QRCodeReader {
 			// File file = new File("corrected-2.png");
 			// File file = new File("MyQRCode.png");
 
-			File file = new File("correctedpdf.png");
+			File file = new File("CV_Beurel_Luca-1 - Copie - Copie.png");
 
 			String decodedText = decodeQRCode(file);
 			if (decodedText == null) {
