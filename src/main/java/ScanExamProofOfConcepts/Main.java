@@ -14,11 +14,28 @@ import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 
 import com.google.zxing.WriterException;
 
-public class Main {
+public class Main extends Thread {
 	private static final String QR_CODE = "./MyQRCode.png";
 	private static final String PDFCIBLE = "./pfo_example.pdf";
 
-	public static void main(String[] args) throws IOException {
+	public static void test(PDFRenderer pdfRenderer, int debpages, int nbPagesTotal) throws IOException {
+		long startThread = System.currentTimeMillis();
+
+		for (int page = debpages; page < nbPagesTotal; ++page) {
+			BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 80, ImageType.GRAY);
+			BufferedImage dest = bim.getSubimage(540, 50, 120, 110);
+			System.out.println(QRCodeReader.decodeQRCodeBuffered(dest));
+		}
+
+		System.out.println("temps décodage du thread : " + (System.currentTimeMillis() - startThread) + " ms");
+	}
+
+	public void run() {
+		System.out.println("début du thread : " + Thread.currentThread().getName());
+
+	}
+
+	public static void main(String[] args) throws IOException, InterruptedException {
 		Scanner sc = new Scanner(System.in);
 		long startTime = System.currentTimeMillis();
 
@@ -46,15 +63,58 @@ public class Main {
 		PDDocument document = PDDocument.load(pdf);
 		PDFRenderer pdfRenderer = new PDFRenderer(document);
 
-		for (int page = 0; page < document.getNumberOfPages(); ++page) {
-			long startTime1 = System.currentTimeMillis();
-			BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 80, ImageType.RGB);
-			BufferedImage dest = bim.getSubimage(540, 50, 120, 110);
-			System.out.println("temps render : " + (System.currentTimeMillis() - startTime1) + " ms");
+		int premierQuart = document.getNumberOfPages() / 4;
+		int milieu = document.getNumberOfPages() / 2;
+		int troisiemeQuart = 3 * document.getNumberOfPages() / 4;
 
-			System.out.println(QRCodeReader.decodeQRCodeBuffered(dest));
+		Thread thread1 = new Thread(() -> {
+			try {
+				test(pdfRenderer, 0, premierQuart);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}, "thread1");
+		Thread thread2 = new Thread(() -> {
+			try {
+				test(pdfRenderer, premierQuart, milieu);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}, "thread2");
 
-			System.out.println("tempsdécodage : " + (System.currentTimeMillis() - startTime1) + " ms");
+		Thread thread3 = new Thread(() -> {
+			try {
+				test(pdfRenderer, milieu, troisiemeQuart);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}, "thread3");
+
+		thread1.start();
+		thread2.start();
+		thread3.start();
+		test(pdfRenderer, troisiemeQuart, document.getNumberOfPages());
+
+		/*
+		 * for (int page = 0; page < document.getNumberOfPages(); ++page) { long
+		 * startTime1 = System.currentTimeMillis(); BufferedImage bim =
+		 * pdfRenderer.renderImageWithDPI(page, 80, ImageType.RGB); BufferedImage dest =
+		 * bim.getSubimage(540, 50, 120, 110);
+		 * 
+		 * System.out.println("temps render : " + (System.currentTimeMillis() -
+		 * startTime1) + " ms");
+		 * 
+		 * System.out.println(QRCodeReader.decodeQRCodeBuffered(dest));
+		 * 
+		 * System.out.println("tempsdécodage : " + (System.currentTimeMillis() -
+		 * startTime1) + " ms"); }
+		 */
+
+		// On attends d'être sur que tous les threads on fini avant de refermer le
+		// document.
+		while (activeCount() > 1) {
+			System.out.println(activeCount());
+			sleep(50);
 		}
 
 		document.close();
