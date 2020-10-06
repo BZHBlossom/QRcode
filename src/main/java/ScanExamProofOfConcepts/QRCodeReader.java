@@ -33,6 +33,26 @@ public class QRCodeReader {
 			return null;
 		}
 	}
+	
+	/**
+	 * @param qrCodeimage
+	 * @return le texte decode du QRCOde se trouvant dans qrCodeImage
+	 * @throws IOException
+	 */
+	public static String decodeQRCodeBuffered(BufferedImage bufferedImage) throws IOException {
+		LuminanceSource source = new BufferedImageLuminanceSource(bufferedImage);
+		BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+
+		try {
+			Result result = new MultiFormatReader().decode(bitmap);
+			return result.getText();
+		} catch (NotFoundException e) {
+			System.out.println("There is no QR code in the image");
+			return null;
+		}
+	}
+	
+	
 
 	/**
 	 * @param pdfFilename

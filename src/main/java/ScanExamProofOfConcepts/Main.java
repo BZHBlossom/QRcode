@@ -1,13 +1,18 @@
 package ScanExamProofOfConcepts;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
 
+import javax.imageio.ImageIO;
+
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.ImageType;
+import org.apache.pdfbox.rendering.PDFRenderer;
+import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 
 import com.google.zxing.WriterException;
-
 
 public class Main {
 	private static final String QR_CODE = "./MyQRCode.png";
@@ -15,6 +20,7 @@ public class Main {
 
 	public static void main(String[] args) throws IOException {
 		Scanner sc = new Scanner(System.in);
+		long startTime = System.currentTimeMillis();
 
 		System.out.println("Text du QRCode à générer ?");
 		String stringAEncoder = sc.next();
@@ -29,33 +35,33 @@ public class Main {
 			System.out.println("Could not generate QR Code, IOException :: " + e.getMessage());
 		}
 
-		System.out.println("Le QR Code a été généré");
-		System.out.println("Insertion du QR OCde");
-		
-		QRCodeReader.PDFtoPNG(PDFCIBLE);
-		PDDocument document = PDDocument.load(new File(PDFCIBLE));
+		System.out.println("Le QR Code a été généré en " + (System.currentTimeMillis() - startTime) + " ms");
 
-		String FICHIERCIBLE = PDFCIBLE.replace(".pdf", "");
+		AddImageToPDF.createPDFFromImageInAllPages(PDFCIBLE, QR_CODE, "./pfo_example_inserted.pdf");
 
-		for (int page = 0; page < document.getNumberOfPages(); ++page) {
-			String pdfPage = FICHIERCIBLE + "-page-" + (page + 1) + ".png";
-			InsertingImage.insertIn(pdfPage, QR_CODE);
+		System.out.println("Le QR OCde a été inséré en " + (System.currentTimeMillis() - startTime) + " ms");
 
-		}
+		File pdf = new File("./pfo_example_inserted.pdf");
+
+		PDDocument document = PDDocument.load(pdf);
+		PDFRenderer pdfRenderer = new PDFRenderer(document);
 
 		for (int page = 0; page < document.getNumberOfPages(); ++page) {
-			String pdfPage = FICHIERCIBLE + "-page-" + (page + 1) + "-combined" + ".png";
+			long startTime1 = System.currentTimeMillis();
+			BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 80, ImageType.RGB);
+			BufferedImage dest = bim.getSubimage(540, 50, 120, 110);
+			System.out.println("temps render : " + (System.currentTimeMillis() - startTime1) + " ms");
 
-			String decodedText = QRCodeReader.decodeQRCode(new File(pdfPage));
-			if (decodedText == null) {
-				System.out.println("No QR Code found in the image");
-			} else {
-				System.out.println("Decoded text = " + decodedText);
-			}
+			System.out.println(QRCodeReader.decodeQRCodeBuffered(dest));
+
+			System.out.println("tempsdécodage : " + (System.currentTimeMillis() - startTime1) + " ms");
 		}
 
+		document.close();
 		sc.close();
+
 		System.out.println("Fin de la lecture des QRCodes");
+		System.out.println("temps total d'execution : " + (System.currentTimeMillis() - startTime) + " ms");
 	}
 
 }
