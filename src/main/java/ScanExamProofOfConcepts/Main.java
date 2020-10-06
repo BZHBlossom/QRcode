@@ -1,48 +1,22 @@
 package ScanExamProofOfConcepts;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
 
-import javax.imageio.ImageIO;
-import javax.swing.*;
-
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
-import org.apache.pdfbox.tools.imageio.ImageIOUtil;
-
 import com.google.zxing.WriterException;
 
 public class Main extends Thread {
 	private static final String QR_CODE = "./MyQRCode.png";
-	private static final String PDFCIBLE = "./CM-C-Unix.pdf";
-	//private static final String PDFCIBLE = "./pfo_example.pdf";
-
-	public static void lecture(PDFRenderer pdfRenderer, int debpages, int nbPagesTotal) throws IOException {
-		long startThread = System.currentTimeMillis();
-
-		for (int page = debpages; page < nbPagesTotal; ++page) {
-			BufferedImage bim = pdfRenderer.renderImageWithDPI(page,300, ImageType.RGB);
-			BufferedImage dest = bim.getSubimage(0, bim.getHeight() - (int)(bim.getHeight() * 0.3f), (int)(bim.getWidth() * 0.3f), (int)(bim.getHeight() * 0.3f));
-			/*JFrame frame = new JFrame();
-			frame.getContentPane().setLayout(new FlowLayout());
-			frame.getContentPane().add(new JLabel(new ImageIcon(dest)));
-			frame.pack();
-			frame.setVisible(true);*/
-			System.out.println(QRCodeReader.decodeQRCodeBuffered(bim));
-		}
-
-		System.out.println("temps décodage du thread : " + (System.currentTimeMillis() - startThread) + " ms");
-	}
-
+	//private static final String PDFCIBLE = "./CM-C-Unix.pdf";
+	private static final String PDFCIBLE = "./pfo_example.pdf";
+	private static final String PDFQR = "./pfo_example_inserted.pdf";
 	
+
 	public void run() {
 		System.out.println("début du thread : " + Thread.currentThread().getName());
-
 	}
 
 	public static void main(String[] args) throws IOException, InterruptedException {
@@ -68,25 +42,29 @@ public class Main extends Thread {
 		System.out.println("Le QR OCde a été inséré en " + (System.currentTimeMillis() - startTime) + " ms");
 		startTime = System.currentTimeMillis();
 
-		File pdf = new File("./pfo_example_inserted.pdf");
+		File pdf = new File(PDFQR);
 
 		PDDocument document = PDDocument.load(pdf);
 		PDFRenderer pdfRenderer = new PDFRenderer(document);
 
-		int premierQuart = document.getNumberOfPages() / 4;
-		int milieu = document.getNumberOfPages() / 2;
-		int troisiemeQuart = 3 * document.getNumberOfPages() / 4;
+		int firstSixth = document.getNumberOfPages() / 6;
+		int secondSixth = document.getNumberOfPages() / 3;
+		int mid = document.getNumberOfPages() / 2;
+		int fourthSixth = 2 * document.getNumberOfPages() / 3;
+		int fifthSixth = 5 * document.getNumberOfPages() / 6;
 
+		
+		//Gestion des threads
 		Thread thread1 = new Thread(() -> {
 			try {
-				lecture(pdfRenderer, 0, premierQuart);
+				QRCodeReader.lecture(pdfRenderer, 0, firstSixth);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}, "thread1");
 		Thread thread2 = new Thread(() -> {
 			try {
-				lecture(pdfRenderer, premierQuart, milieu);
+				QRCodeReader.lecture(pdfRenderer, firstSixth, secondSixth);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -94,7 +72,21 @@ public class Main extends Thread {
 
 		Thread thread3 = new Thread(() -> {
 			try {
-				lecture(pdfRenderer, milieu, troisiemeQuart);
+				QRCodeReader.lecture(pdfRenderer, secondSixth, mid);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}, "thread3");
+		Thread thread4 = new Thread(() -> {
+			try {
+				QRCodeReader.lecture(pdfRenderer, mid, fourthSixth);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}, "thread3");
+		Thread thread5 = new Thread(() -> {
+			try {
+				QRCodeReader.lecture(pdfRenderer, fourthSixth, fifthSixth);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -103,20 +95,21 @@ public class Main extends Thread {
 		thread1.start();
 		thread2.start();
 		thread3.start();
-		lecture(pdfRenderer, troisiemeQuart, document.getNumberOfPages());
+		thread4.start();
+		thread5.start();
+
+		QRCodeReader.lecture(pdfRenderer, fifthSixth, document.getNumberOfPages());
 
 		// On attends d'être sur que tous les threads on fini avant de refermer le
 		// document.
 		while (activeCount() > 1) {
-			System.out.println(activeCount());
-			sleep(50);
+			sleep(10);
 		}
 
 		document.close();
 		sc.close();
 
 		System.out.println("Fin de la lecture des QRCodes");
-		System.out.println("temps lecture d'execution : " + (System.currentTimeMillis() - startTime) + " ms");
 	}
 
 }

@@ -34,14 +34,13 @@ public class QRCodeGenerator {
         MatrixToImageWriter.writeToPath(bitMatrix, "PNG", path);
     }
 
+    
+    
     public static void main(String[] args) {
 		Scanner sc = new Scanner(System.in);
-
 		System.out.println("Text du QRCode à générer ?");
 		String stringAEncoder = sc.next();
 
-    	
-    	
         try {
             generateQRCodeImage(stringAEncoder, 350, 350, QR_CODE_IMAGE_PATH);
         } catch (WriterException e) {
