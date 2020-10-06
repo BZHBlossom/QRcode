@@ -18,7 +18,7 @@ public class Main extends Thread {
 	private static final String QR_CODE = "./MyQRCode.png";
 	private static final String PDFCIBLE = "./pfo_example.pdf";
 
-	public static void test(PDFRenderer pdfRenderer, int debpages, int nbPagesTotal) throws IOException {
+	public static void lecture(PDFRenderer pdfRenderer, int debpages, int nbPagesTotal) throws IOException {
 		long startThread = System.currentTimeMillis();
 
 		for (int page = debpages; page < nbPagesTotal; ++page) {
@@ -57,7 +57,8 @@ public class Main extends Thread {
 		AddImageToPDF.createPDFFromImageInAllPages(PDFCIBLE, QR_CODE, "./pfo_example_inserted.pdf");
 
 		System.out.println("Le QR OCde a été inséré en " + (System.currentTimeMillis() - startTime) + " ms");
-
+		startTime = System.currentTimeMillis();
+		
 		File pdf = new File("./pfo_example_inserted.pdf");
 
 		PDDocument document = PDDocument.load(pdf);
@@ -69,14 +70,14 @@ public class Main extends Thread {
 
 		Thread thread1 = new Thread(() -> {
 			try {
-				test(pdfRenderer, 0, premierQuart);
+				lecture(pdfRenderer, 0, premierQuart);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}, "thread1");
 		Thread thread2 = new Thread(() -> {
 			try {
-				test(pdfRenderer, premierQuart, milieu);
+				lecture(pdfRenderer, premierQuart, milieu);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -84,7 +85,7 @@ public class Main extends Thread {
 
 		Thread thread3 = new Thread(() -> {
 			try {
-				test(pdfRenderer, milieu, troisiemeQuart);
+				lecture(pdfRenderer, milieu, troisiemeQuart);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -93,22 +94,7 @@ public class Main extends Thread {
 		thread1.start();
 		thread2.start();
 		thread3.start();
-		test(pdfRenderer, troisiemeQuart, document.getNumberOfPages());
-
-		/*
-		 * for (int page = 0; page < document.getNumberOfPages(); ++page) { long
-		 * startTime1 = System.currentTimeMillis(); BufferedImage bim =
-		 * pdfRenderer.renderImageWithDPI(page, 80, ImageType.RGB); BufferedImage dest =
-		 * bim.getSubimage(540, 50, 120, 110);
-		 * 
-		 * System.out.println("temps render : " + (System.currentTimeMillis() -
-		 * startTime1) + " ms");
-		 * 
-		 * System.out.println(QRCodeReader.decodeQRCodeBuffered(dest));
-		 * 
-		 * System.out.println("tempsdécodage : " + (System.currentTimeMillis() -
-		 * startTime1) + " ms"); }
-		 */
+		lecture(pdfRenderer, troisiemeQuart, document.getNumberOfPages());
 
 		// On attends d'être sur que tous les threads on fini avant de refermer le
 		// document.
@@ -121,7 +107,7 @@ public class Main extends Thread {
 		sc.close();
 
 		System.out.println("Fin de la lecture des QRCodes");
-		System.out.println("temps total d'execution : " + (System.currentTimeMillis() - startTime) + " ms");
+		System.out.println("temps lecture d'execution : " + (System.currentTimeMillis() - startTime) + " ms");
 	}
 
 }
