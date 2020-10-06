@@ -29,19 +29,16 @@ public class InsertingImage {
 	public static void createPdfFromImageInAllPages(String inputFile, String imagePath, String outputFile)
 			throws IOException {
 		try (PDDocument doc = PDDocument.load(new File(inputFile))) {
-			int nbPage = doc.getNumberOfPages();
 			float scale = 0.3f;
-			PDPage page = doc.getPage(0);
-			
-			
 
+			
+			int i = 0;
 			PDImageXObject pdImage = PDImageXObject.createFromFile(imagePath, doc);
-			for (int i = 0; i < nbPage; i++) {
+			for (PDPage page: doc.getPages()) {
 				try (PDPageContentStream contentStream = new PDPageContentStream(doc, page, AppendMode.APPEND, true,
 						true)) {
-
-					contentStream.drawImage(pdImage, 480, 700, pdImage.getWidth() * scale, pdImage.getHeight() * scale);
-					page = doc.getPage(i);
+					System.out.println(pdImage.getWidth() * scale + " " + pdImage.getHeight() * scale);
+					contentStream.drawImage(pdImage, 0, 0, pdImage.getWidth() * scale, pdImage.getHeight() * scale);
 				}
 			}
 			doc.save(outputFile);

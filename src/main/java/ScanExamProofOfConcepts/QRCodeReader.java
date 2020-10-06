@@ -14,6 +14,7 @@ import java.awt.image.*;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Vector;
 
 public class QRCodeReader {
 
@@ -45,11 +46,14 @@ public class QRCodeReader {
 		LuminanceSource source = new BufferedImageLuminanceSource(bufferedImage);
 		BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
 
-		Map<DecodeHintType,String> map = new HashMap<>();
-		map.put(DecodeHintType.CHARACTER_SET,"ALLOWED_EAN_EXTENSIONS");
+		Map<DecodeHintType,Object> map = new HashMap<>();
+		map.put(DecodeHintType.ALLOWED_EAN_EXTENSIONS, BarcodeFormat.QR_CODE);
 
 		try {
-			Result result = new MultiFormatReader().decodeWithState(bitmap);
+			//Result result = new MultiFormatReader().decode(bitmap);
+			MultiFormatReader mfr = new MultiFormatReader();
+			mfr.setHints(map);
+			Result result = mfr.decodeWithState(bitmap);
 			return result.getText();
 		} catch (NotFoundException e) {
 			System.out.println("There is no QR code in the image");

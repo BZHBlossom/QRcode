@@ -1,11 +1,13 @@
 package ScanExamProofOfConcepts;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -17,7 +19,7 @@ import com.google.zxing.WriterException;
 
 public class Main extends Thread {
 	private static final String QR_CODE = "./MyQRCode.png";
-	private static final String PDFCIBLE = "./handouts-cm1.pdf";
+	private static final String PDFCIBLE = "./CM-C-Unix.pdf";
 	//private static final String PDFCIBLE = "./pfo_example.pdf";
 
 	public static void lecture(PDFRenderer pdfRenderer, int debpages, int nbPagesTotal) throws IOException {
@@ -25,8 +27,13 @@ public class Main extends Thread {
 
 		for (int page = debpages; page < nbPagesTotal; ++page) {
 			BufferedImage bim = pdfRenderer.renderImageWithDPI(page,300, ImageType.RGB);
-			BufferedImage dest = bim.getSubimage(540, 50, 120, 110);
-			System.out.println(QRCodeReader.decodeQRCodeBuffered(dest));
+			BufferedImage dest = bim.getSubimage(0, bim.getHeight() - (int)(bim.getHeight() * 0.3f), (int)(bim.getWidth() * 0.3f), (int)(bim.getHeight() * 0.3f));
+			/*JFrame frame = new JFrame();
+			frame.getContentPane().setLayout(new FlowLayout());
+			frame.getContentPane().add(new JLabel(new ImageIcon(dest)));
+			frame.pack();
+			frame.setVisible(true);*/
+			System.out.println(QRCodeReader.decodeQRCodeBuffered(bim));
 		}
 
 		System.out.println("temps décodage du thread : " + (System.currentTimeMillis() - startThread) + " ms");
