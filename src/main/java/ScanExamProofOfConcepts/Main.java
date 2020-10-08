@@ -10,23 +10,26 @@ import com.google.zxing.WriterException;
 
 public class Main extends Thread {
 	private static final String QR_CODE = "./MyQRCode.png";
-	//private static final String PDFCIBLE = "./CM-C-Unix.pdf";
+	// private static final String PDFCIBLE = "./CM-C-Unix.pdf";
 	private static final String PDFCIBLE = "./pfo_example.pdf";
 	private static final String PDFQR = "./pfo_example_inserted.pdf";
-	
 
 	public void run() {
 		System.out.println("début du thread : " + Thread.currentThread().getName());
 	}
 
 	public static void main(String[] args) throws IOException, InterruptedException {
-		Scanner sc = new Scanner(System.in);
-		long startTime = System.currentTimeMillis();
 
+		// génération et insertion du QRCode
+
+		Scanner sc = new Scanner(System.in);
 		System.out.println("Text du QRCode à générer ?");
 		String stringAEncoder = sc.next();
 
+		long startTime = System.currentTimeMillis();
+		
 		try {
+			// génération en fonction de la chaine demandéé
 			QRCodeGenerator.generateQRCodeImage(stringAEncoder, 350, 350, QR_CODE);
 
 		} catch (WriterException e) {
@@ -34,17 +37,17 @@ public class Main extends Thread {
 		} catch (IOException e) {
 			System.out.println("Could not generate QR Code, IOException :: " + e.getMessage());
 		}
-
 		System.out.println("Le QR Code a été généré en " + (System.currentTimeMillis() - startTime) + " ms");
 
+		// Insertion dans toutes les pages du pdf Cible
 		InsertingImage.createPdfFromImageInAllPages(PDFCIBLE, QR_CODE, "./pfo_example_inserted.pdf");
 
 		System.out.println("Le QR OCde a été inséré en " + (System.currentTimeMillis() - startTime) + " ms");
 		startTime = System.currentTimeMillis();
 
-		File pdf = new File(PDFQR);
+		// Partie lecture des QRCode
 
-		PDDocument document = PDDocument.load(pdf);
+		PDDocument document = PDDocument.load(new File(PDFQR));
 		PDFRenderer pdfRenderer = new PDFRenderer(document);
 
 		int firstSixth = document.getNumberOfPages() / 6;
@@ -53,8 +56,7 @@ public class Main extends Thread {
 		int fourthSixth = 2 * document.getNumberOfPages() / 3;
 		int fifthSixth = 5 * document.getNumberOfPages() / 6;
 
-		
-		//Gestion des threads
+		// Gestion des threads
 		Thread thread1 = new Thread(() -> {
 			try {
 				QRCodeReader.lecture(pdfRenderer, 0, firstSixth);
@@ -98,6 +100,10 @@ public class Main extends Thread {
 		thread4.start();
 		thread5.start();
 
+		// On coupe le pdf a lire en 6 threads qui permettent de gagner du temps de
+		// lecture
+		// TODO Ajustage du nombre de threads ?
+		
 		QRCodeReader.lecture(pdfRenderer, fifthSixth, document.getNumberOfPages());
 
 		// On attends d'être sur que tous les threads on fini avant de refermer le
